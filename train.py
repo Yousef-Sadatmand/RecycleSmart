@@ -255,7 +255,8 @@ print("\nEvaluating on held-out test set…")
 test_loss, test_acc = model.evaluate(test_ds)
 print(f"\nTest accuracy: {test_acc:.4f}  |  Test loss: {test_loss:.4f}")
 
-# Save final model as SavedModel format (folder) — required for TFLite conversion
+# Export as SavedModel format (folder) — required for TFLite conversion
+# Note: model.export() is the correct method in Keras 3+, not model.save()
 SAVED_MODEL_PATH = "models/efficientnetb0_savedmodel"
-model.save(SAVED_MODEL_PATH)
-print(f"\nFine-tuned model saved to: {SAVED_MODEL_PATH}/")
+model.export(SAVED_MODEL_PATH)
+print(f"\nFine-tuned model exported to: {SAVED_MODEL_PATH}/")
