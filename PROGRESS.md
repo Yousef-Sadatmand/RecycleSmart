@@ -53,38 +53,50 @@ contamination — a real, expensive problem municipalities already budget for.
 
 ### Phase 1 — Dataset Expansion (Foundation)
 **Goal: 15-20 classes that cover what people actually get wrong**
-- [ ] Download and clean TACO dataset (60 categories → map to ~15 usable classes)
-- [ ] Merge TACO with TrashNet (current dataset)
+- [ ] Find and download The Garbage Dataset (GD, ~13,000 images, released 2026)
+      — preferred over TACO for household use case (indoor backgrounds match app context)
+- [ ] Use TACO as a supplement only (outdoor litter photos, diverse backgrounds)
+- [ ] Merge GD + TrashNet (current dataset)
 - [ ] Target classes to add: electronics/e-waste, food waste/organics,
       textiles, hazardous (batteries/paint), styrofoam, soft plastics
 - [ ] Retrain EfficientNetB0 on expanded dataset
 - [ ] Target: 90%+ accuracy on new class set
+- [ ] Confidence threshold: below 70% → show "unsure, check local guidelines"
 - Why first: a weak model kills the product — everything else sits on this
 
-### Phase 2 — Web App (Validate with Real Users)
-**Goal: something people can use on their phone browser today, no install needed**
+### Phase 2 — Web App + API Layer (Validate with Real Users)
+**Goal: working product on phone browser + API municipalities can integrate into their apps**
 - [ ] Build React frontend with camera capture
 - [ ] Build Python/FastAPI backend serving the model
-- [ ] Municipality rules layer — user selects city → bin instructions adjust
-- [ ] Confidence threshold: below 70% → show "unsure, check local guidelines"
+- [ ] Municipality rules layer — PostgreSQL + JSONB column for bin rules
+      (rules are volatile — cities change policies, a lookup table won't scale)
+- [ ] User-contributed corrections — flag wrong predictions per city
+      (this data becomes the competitive moat)
 - [ ] Deploy to web (Render / Railway / Fly.io)
-- Why before mobile: faster to ship, no app store approval, validates the product
+- [ ] Expose public API so municipalities can embed in their existing city apps
+      (solves the user adoption gap — meet users where they already are)
+- Why API matters: selling to GFL/Recology means integrating into their apps,
+  not convincing people to download a new one
 
 ### Phase 3 — Mobile App
 **Goal: native iOS + Android app**
 - [ ] convert_tflite.py — export model to TFLite with Dynamic Range Quantization
-- [ ] Build React Native or Flutter app
+- [ ] Build React Native app (recommended over Flutter — shares code with web app,
+      larger talent pool, strong TFLite support via JSI in 2026)
 - [ ] Real-time camera feed (not just photo upload)
 - [ ] Offline support — model runs on device, no internet needed
-- [ ] Moving average for smooth real-time classification (avg last 3-5 frames)
+- [ ] Temporal smoothing: only update classification if same label appears
+      in 3 of last 5 frames — prevents flickering during real-time scanning
 - [ ] Submit to App Store + Google Play
 
 ### Phase 4 — Production & Sales
 **Goal: a live product with data to show potential buyers**
 - [ ] Analytics — track what items people scan most, where confusion happens
 - [ ] User feedback loop — wrong predictions feed back into retraining
-- [ ] Municipality partnerships — pilot with 1-2 cities for localized rules
+- [ ] Identify pilot municipality (leverage GFL industry contacts)
 - [ ] Approach GFL, Waste Management, Recology with usage data + accuracy numbers
+- [ ] Explore EPR (Extended Producer Responsibility) angle — in 2026 many regions
+      require manufacturers to fund packaging lifecycle. App becomes compliance tool.
 
 ---
 
