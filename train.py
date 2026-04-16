@@ -26,7 +26,7 @@ from sklearn.preprocessing import LabelEncoder
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATA_DIR    = "data/raw"          # 6 class folders live here
-MODEL_OUT   = "models/efficientnetb0_fixed"     # SavedModel format (folder, not .h5)
+MODEL_OUT   = "models/efficientnetb0_fixed.keras"     # checkpoint during phase 1
 IMG_SIZE    = (224, 224)          # EfficientNetB0 native size is 224×224
 BATCH_SIZE  = 32
 EPOCHS      = 50                  # early stopping will cut this short
@@ -202,7 +202,7 @@ history = model.fit(
 # EfficientNetB0 has 237 layers — unfreeze from layer 200 onwards (top ~37 layers).
 
 FINE_TUNE_FROM = 200          # unfreeze layers from index 200 onwards
-MODEL_OUT_FT   = "models/efficientnetb0_finetuned"  # SavedModel format
+MODEL_OUT_FT   = "models/efficientnetb0_finetuned.keras"  # checkpoint during phase 2
 
 print("\n── Phase 2: Fine-tuning ──")
 base_model.trainable = True
@@ -255,6 +255,7 @@ print("\nEvaluating on held-out test set…")
 test_loss, test_acc = model.evaluate(test_ds)
 print(f"\nTest accuracy: {test_acc:.4f}  |  Test loss: {test_loss:.4f}")
 
-# Save as SavedModel format — better than .h5 for TFLite conversion
-model.save(MODEL_OUT_FT)
-print(f"\nFine-tuned model saved to: {MODEL_OUT_FT}/")
+# Save final model as SavedModel format (folder) — required for TFLite conversion
+SAVED_MODEL_PATH = "models/efficientnetb0_savedmodel"
+model.save(SAVED_MODEL_PATH)
+print(f"\nFine-tuned model saved to: {SAVED_MODEL_PATH}/")

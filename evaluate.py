@@ -20,7 +20,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATA_DIR   = "data/raw"
-MODEL_PATH = "models/efficientnetb0_finetuned"   # SavedModel format (folder)
+MODEL_PATH = "models/efficientnetb0_finetuned.keras"
 OUTPUT_DIR = "evaluation"
 IMG_SIZE   = (224, 224)
 BATCH_SIZE = 32
