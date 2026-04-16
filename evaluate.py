@@ -20,7 +20,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATA_DIR   = "data/raw"
-MODEL_PATH = "models/efficientnetb0_finetuned.h5"
+MODEL_PATH = "models/efficientnetb0_finetuned"   # SavedModel format (folder)
 OUTPUT_DIR = "evaluation"
 IMG_SIZE   = (224, 224)
 BATCH_SIZE = 32
@@ -43,8 +43,9 @@ for class_name in CLASS_NAMES:
             all_paths.append(os.path.join(class_dir, fname))
             all_labels.append(class_name)
 
-all_paths  = np.array(all_paths)
-all_labels = np.array(all_labels)
+sort_idx   = np.argsort(all_paths)
+all_paths  = np.array(all_paths)[sort_idx]
+all_labels = np.array(all_labels)[sort_idx]
 
 le = LabelEncoder()
 le.fit(CLASS_NAMES)

@@ -26,7 +26,7 @@ from sklearn.preprocessing import LabelEncoder
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATA_DIR    = "data/raw"          # 6 class folders live here
-MODEL_OUT   = "models/efficientnetb0_fixed.h5"
+MODEL_OUT   = "models/efficientnetb0_fixed"     # SavedModel format (folder, not .h5)
 IMG_SIZE    = (224, 224)          # EfficientNetB0 native size is 224×224
 BATCH_SIZE  = 32
 EPOCHS      = 50                  # early stopping will cut this short
@@ -49,8 +49,12 @@ for class_name in CLASS_NAMES:
             all_paths.append(os.path.join(class_dir, fname))
             all_labels.append(class_name)
 
-all_paths  = np.array(all_paths)
-all_labels = np.array(all_labels)
+# Sort by path to guarantee identical ordering every run — os.listdir order
+# is not deterministic, so without sorting, random_state=42 produces a
+# different split each time the script runs on a different session/machine.
+sort_idx   = np.argsort(all_paths)
+all_paths  = np.array(all_paths)[sort_idx]
+all_labels = np.array(all_labels)[sort_idx]
 
 print(f"Total images found: {len(all_paths)}")
 for cn in CLASS_NAMES:
@@ -198,17 +202,22 @@ history = model.fit(
 # EfficientNetB0 has 237 layers — unfreeze from layer 200 onwards (top ~37 layers).
 
 FINE_TUNE_FROM = 200          # unfreeze layers from index 200 onwards
-MODEL_OUT_FT   = "models/efficientnetb0_finetuned.h5"
+MODEL_OUT_FT   = "models/efficientnetb0_finetuned"  # SavedModel format
 
 print("\n── Phase 2: Fine-tuning ──")
 base_model.trainable = True
 
-# Re-freeze everything below FINE_TUNE_FROM
+# Re-freeze everything below FINE_TUNE_FROM.
+# BatchNormalization layers are ALWAYS kept frozen — unfreezing BN with a small
+# dataset corrupts the running mean/variance statistics and hurts accuracy.
 for layer in base_model.layers[:FINE_TUNE_FROM]:
     layer.trainable = False
+for layer in base_model.layers:
+    if isinstance(layer, layers.BatchNormalization):
+        layer.trainable = False
 
 trainable_count = sum(1 for l in base_model.layers if l.trainable)
-print(f"Unfroze {trainable_count} layers in MobileNetV2 base (from layer {FINE_TUNE_FROM})")
+print(f"Unfroze {trainable_count} layers in EfficientNetB0 base (from layer {FINE_TUNE_FROM}, BN frozen)")
 
 # Recompile with a much lower learning rate
 model.compile(
@@ -245,4 +254,7 @@ history_ft = model.fit(
 print("\nEvaluating on held-out test set…")
 test_loss, test_acc = model.evaluate(test_ds)
 print(f"\nTest accuracy: {test_acc:.4f}  |  Test loss: {test_loss:.4f}")
-print(f"\nFine-tuned model saved to: {MODEL_OUT_FT}")
+
+# Save as SavedModel format — better than .h5 for TFLite conversion
+model.save(MODEL_OUT_FT)
+print(f"\nFine-tuned model saved to: {MODEL_OUT_FT}/")
