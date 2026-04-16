@@ -1,7 +1,12 @@
 """
-train.py — RecycleSmart MobileNetV2 training script (fixed pipeline)
+train.py — RecycleSmart EfficientNetB0 training script (fixed pipeline)
 
-Fixes vs. original capstone:
+Upgraded from MobileNetV2 to EfficientNetB0:
+  - Same parameter count range but better accuracy via compound scaling
+  - Better suited for small datasets than EfficientNetV2S (too large/prone to overfit)
+  - Still TFLite-convertible for mobile deployment
+
+Pipeline fixes vs. original capstone:
   1. Split FIRST (70/15/15 stratified), augment AFTER — no data leakage
   2. Validation set added — model has unseen data to tune against during training
   3. Early stopping correctly watches val_loss (validation_data passed to model.fit)
@@ -12,7 +17,7 @@ import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models, callbacks
-from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications import EfficientNetB0
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
@@ -21,8 +26,8 @@ from sklearn.preprocessing import LabelEncoder
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATA_DIR    = "data/raw"          # 6 class folders live here
-MODEL_OUT   = "models/mobilenetv2_fixed.h5"
-IMG_SIZE    = (224, 224)          # MobileNetV2 expects 224×224
+MODEL_OUT   = "models/efficientnetb0_fixed.h5"
+IMG_SIZE    = (224, 224)          # EfficientNetB0 native size is 224×224
 BATCH_SIZE  = 32
 EPOCHS      = 50                  # early stopping will cut this short
 SEED        = 42
@@ -97,11 +102,11 @@ for i, cn in enumerate(CLASS_NAMES):
 AUTOTUNE = tf.data.AUTOTUNE
 
 def load_and_preprocess(path, label):
-    """Read one image file, resize it, and scale pixels to [-1, 1]."""
+    """Read one image file, resize it. EfficientNet expects pixels in [0, 255]."""
     img = tf.io.read_file(path)
     img = tf.image.decode_jpeg(img, channels=3)
     img = tf.image.resize(img, IMG_SIZE)
-    img = tf.keras.applications.mobilenet_v2.preprocess_input(img)  # scales to [-1,1]
+    img = tf.keras.applications.efficientnet.preprocess_input(img)  # scales to [-1,1]
     return img, label
 
 def augment(img, label):
@@ -127,11 +132,12 @@ val_ds   = make_dataset(X_val,   y_val,   augment_data=False, shuffle=False)
 test_ds  = make_dataset(X_test,  y_test,  augment_data=False, shuffle=False)
 
 # ── 6. Build the model ────────────────────────────────────────────────────────
-# MobileNetV2 pretrained on ImageNet = powerful feature extractor out of the box.
-# We freeze its layers (weights don't change) and add a new classification head
-# trained from scratch on our 6 waste categories.
+# EfficientNetB0 pretrained on ImageNet = powerful feature extractor out of the box.
+# Uses compound scaling (depth + width + resolution balanced together) which makes
+# it more accurate than MobileNetV2 at a similar parameter count.
+# We freeze its layers and add a new classification head for our 6 waste categories.
 
-base_model = MobileNetV2(
+base_model = EfficientNetB0(
     input_shape=(*IMG_SIZE, 3),
     include_top=False,       # drop ImageNet's 1000-class head
     weights="imagenet"
@@ -187,14 +193,12 @@ history = model.fit(
 )
 
 # ── 9. Phase 2 — Fine-tuning ──────────────────────────────────────────────────
-# Unfreeze the top 30 layers of MobileNetV2 so they can adapt to waste images.
+# Unfreeze the top layers of EfficientNetB0 so they can adapt to waste images.
 # Use a learning rate 10× smaller than phase 1 so we nudge, not overwrite.
-#
-# Why 30 layers? The base has 154 layers total. Bottom layers = universal edges
-# and textures (keep frozen). Top layers = high-level patterns (let these adapt).
+# EfficientNetB0 has 237 layers — unfreeze from layer 200 onwards (top ~37 layers).
 
-FINE_TUNE_FROM = 100          # unfreeze layers from index 100 onwards
-MODEL_OUT_FT   = "models/mobilenetv2_finetuned.h5"
+FINE_TUNE_FROM = 200          # unfreeze layers from index 200 onwards
+MODEL_OUT_FT   = "models/efficientnetb0_finetuned.h5"
 
 print("\n── Phase 2: Fine-tuning ──")
 base_model.trainable = True
