@@ -15,37 +15,28 @@
 ### [x] MobileNetV2 transfer learning — webcam demo (capstone)
 - ~93% train accuracy (inflated — data leakage, no val set, broken early stopping)
 
-### [x] Write train.py with fixed data pipeline
-- 70/15/15 stratified split (split first, augment after)
-- Augmentation on training set only
+### [x] train.py — fixed pipeline + EfficientNetB0
+- 70/15/15 stratified split, sorted paths for deterministic splits
+- Augmentation on training set only (flips + brightness)
 - class_weight for trash imbalance (weight: 3.069)
 - Working early stopping watching val_loss
-- MobileNetV2 base frozen, custom classification head
-- **Phase 1 result: 82.6% test accuracy**
-- Fine-tuning phase added (unfroze top 54 layers, lr=1e-4)
-- **Phase 2 result: 85.5% test accuracy**
-- Saved to: models/mobilenetv2_finetuned.h5
+- Switched from MobileNetV2 → EfficientNetB0 (compound scaling, better accuracy)
+- Phase 1: frozen base, custom head only
+- Phase 2: fine-tuning top 30 layers, BN layers kept frozen, lr=1e-4
+- **Final test accuracy: 92.4%** ✓ (target was 90%+)
+- Saved to: models/efficientnetb0_finetuned.keras
+- Exported to: models/efficientnetb0_savedmodel/ (for TFLite)
 
----
-
-## Current Issue
-- Overfitting: train accuracy ~98%, val/test ~85%
-- Root cause: small dataset (1,768 training images across 6 classes)
-- Fix planned: stronger regularization (more dropout + more aggressive augmentation)
+### [x] evaluate.py — confusion matrix + classification report
+- Per-class precision, recall, F1
+- Best classes: cardboard (96% F1), paper (94% F1)
+- Weakest class: trash (87% F1) — expected given only 137 training images
+- Output: evaluation/confusion_matrix.png
 
 ---
 
 ## Up Next
 
-### [ ] Improve regularization in train.py
-- Increase dropout 0.3 → 0.5
-- Add rotation + zoom augmentation
-- Target: 90%+ test accuracy
-
-### [ ] Retrain and validate — target 90%+ on held-out test set
-
 ### [ ] Gradio web app for browser-based testing
-
-### [ ] Convert model to TFLite
-
+### [ ] convert_tflite.py — export model to TFLite with quantization
 ### [ ] Build mobile app (React Native or Flutter)
