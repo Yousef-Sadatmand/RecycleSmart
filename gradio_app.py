@@ -2,10 +2,10 @@
 gradio_app.py — RecycleSmart browser demo
 
 Upload a photo of any waste item and get:
-  - Predicted category (cardboard, glass, metal, paper, plastic, trash)
+  - Predicted category (9 classes)
   - Confidence score
   - Which bin to put it in
-  - Confidence bar chart for all 6 classes
+  - Confidence bar chart for all 9 classes
 
 Run in Colab:
   !pip install gradio -q
@@ -56,7 +56,7 @@ def predict(image):
     img = tf.expand_dims(img, axis=0)   # add batch dimension: (1, 224, 224, 3)
 
     # Run inference
-    predictions = model.predict(img, verbose=0)[0]   # shape: (6,)
+    predictions = model.predict(img, verbose=0)[0]   # shape: (9,)
 
     # Top prediction
     top_idx        = int(np.argmax(predictions))
@@ -64,8 +64,13 @@ def predict(image):
     top_confidence = float(predictions[top_idx])
 
     # Label shown above the bar chart
+    if top_confidence < 0.70:
+        certainty = f"⚠️  Low confidence ({top_confidence*100:.1f}%) — check your local guidelines."
+    else:
+        certainty = f"{top_confidence*100:.1f}% confident"
+
     label = (
-        f"Prediction: {top_class.upper()}  ({top_confidence*100:.1f}% confident)\n\n"
+        f"Prediction: {top_class.upper()}  ({certainty})\n\n"
         f"{BIN_INSTRUCTIONS[top_class]}"
     )
 
