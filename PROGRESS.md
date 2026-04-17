@@ -93,6 +93,18 @@ Per-class F1 scores (2,216 test images):
 - Verified: input (1, 224, 224, 3), output (1, 9), sums to 1.0
 - Ready for React Native integration
 
+### [x] React frontend — real-time camera classification
+- Live camera feed, no photo upload needed — camera opens immediately
+- Green scanning reticle overlay
+- Frames sampled every 600ms, sent to FastAPI /predict
+- Temporal smoothing: display only updates when same class appears 3 of last 5 frames (prevents flickering)
+- Result panel: class name, bin type label, confidence %, bin instruction
+- Top 3 confidence bars, color-coded by bin type
+- Low confidence warning shown at <70%
+- Color scheme: green=recycling, amber=compost, red=hazardous, purple=donate, gray=trash
+- VITE_API_URL env var for deployment config
+- Tested and working locally at localhost:5173
+
 ## Roadmap
 
 ### Phase 1 — Dataset Expansion (Foundation)
