@@ -32,19 +32,6 @@ contamination — a real, expensive problem municipalities already budget for.
 - Phase 2: fine-tuning top 30 layers, BN layers kept frozen, lr=1e-4
 - **Final test accuracy: 92.4%** ✓ (target was 90%+)
 
-### [x] evaluate.py — confusion matrix + classification report
-- Per-class precision, recall, F1
-- Best classes: cardboard (96% F1), paper (94% F1)
-- Weakest class: trash (87% F1) — expected given only 137 training images
-- Output: evaluation/confusion_matrix.png
-
-### [x] gradio_app.py — browser demo
-- Image upload → predicted class + confidence + bin instructions
-- Confidence bar chart for all 6 classes
-- Tested on real household items — works well on target classes
-- Known limitation: electronics and out-of-distribution items misclassified
-  (no e-waste class yet — by design, will be fixed in dataset expansion)
-
 ### [x] prepare_data.py — merged dataset (TrashNet + Garbage Dataset)
 - TrashNet (6 classes, 2,527 images) + Garbage Dataset (10 classes, 12,259 images)
 - Output: Data/merged/ — 9 classes, 14,786 images
@@ -75,16 +62,14 @@ Per-class F1 scores (2,216 test images):
 - Overall accuracy: 96.0% | macro avg F1: 0.95
 - Note: 2 WebP files in dataset skipped (TF decode_image doesn't support WebP)
 
----
-
-### [x] FastAPI backend — /predict endpoint
+### [x] FastAPI backend — /predict + /health endpoints
 - POST /predict — accepts image upload, returns class + confidence + bin instruction + all 9 scores
 - GET /health — liveness check for deployment platforms
-- CORS enabled for local frontend dev
-- Model loads once at startup (~3s), all subsequent requests are fast
+- CORS enabled for frontend
+- Model loads once at startup, all subsequent requests are fast
 - 70% confidence threshold — low_confidence: true triggers warning in UI
 - Tested locally: cardboard photo → 99.97% confidence, correct class
-- Run: uvicorn api.main:app --reload (from project root)
+- Run locally: uvicorn api.main:app --reload (from project root)
 
 ### [x] convert_tflite.py — TFLite export with Dynamic Range Quantization
 - Input: models/efficientnetb0_9class_savedmodel (34.5 MB)
@@ -94,70 +79,77 @@ Per-class F1 scores (2,216 test images):
 - Ready for React Native integration
 
 ### [x] React frontend — real-time camera classification
-- Live camera feed, no photo upload needed — camera opens immediately
+- Live camera feed, no photo upload — camera opens immediately on app load
 - Green scanning reticle overlay
 - Frames sampled every 600ms, sent to FastAPI /predict
-- Temporal smoothing: display only updates when same class appears 3 of last 5 frames (prevents flickering)
+- Temporal smoothing: display updates only when same class appears 3 of last 5 frames
 - Result panel: class name, bin type label, confidence %, bin instruction
 - Top 3 confidence bars, color-coded by bin type
 - Low confidence warning shown at <70%
 - Color scheme: green=recycling, amber=compost, red=hazardous, purple=donate, gray=trash
-- VITE_API_URL env var for deployment config
+- VITE_API_URL env var for easy deployment config
 - Tested and working locally at localhost:5173
+
+---
 
 ## Roadmap
 
-### Phase 1 — Dataset Expansion (Foundation)
-**Goal: 15-20 classes that cover what people actually get wrong**
-- [ ] Find and download The Garbage Dataset (GD, ~13,000 images, released 2026)
-      — preferred over TACO for household use case (indoor backgrounds match app context)
-- [ ] Use TACO as a supplement only (outdoor litter photos, diverse backgrounds)
-- [ ] Merge GD + TrashNet (current dataset)
-- [ ] Target classes to add: electronics/e-waste, food waste/organics,
-      textiles, hazardous (batteries/paint), styrofoam, soft plastics
-- [ ] Retrain EfficientNetB0 on expanded dataset
-- [ ] Target: 90%+ accuracy on new class set
-- [ ] Confidence threshold: below 70% → show "unsure, check local guidelines"
-- Why first: a weak model kills the product — everything else sits on this
+### ← NEXT SESSION → Phase 2 Step 1 — Deploy to web
+**Goal: live product accessible from any phone browser**
 
-### Phase 2 — Web App + API Layer (Validate with Real Users)
-**Goal: working product on phone browser + API municipalities can integrate into their apps**
-- [ ] Build React frontend with camera capture
-- [ ] Build Python/FastAPI backend serving the model
-- [ ] Municipality rules layer — PostgreSQL + JSONB column for bin rules
-      (rules are volatile — cities change policies, a lookup table won't scale)
+**Step 1 — Deploy FastAPI backend to Render (free tier)**
+- [ ] Create account at render.com
+- [ ] New Web Service → connect GitHub repo
+- [ ] Build command: pip install -r requirements.txt
+- [ ] Start command: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+- [ ] Copy the live URL Render gives you (e.g. https://recyclesmart-api.onrender.com)
+
+**Step 2 — Point frontend at the live API**
+- [ ] Update frontend/.env: VITE_API_URL=https://your-render-url.onrender.com
+- [ ] Rebuild frontend: npm run build
+
+**Step 3 — Deploy React frontend to Vercel (free)**
+- [ ] Create account at vercel.com
+- [ ] Import GitHub repo → set root directory to frontend/
+- [ ] Add env variable: VITE_API_URL=https://your-render-url.onrender.com
+- [ ] Deploy — Vercel gives a public HTTPS URL
+
+**Step 4 — Test on phone**
+- [ ] Open Vercel URL on phone browser
+- [ ] Camera works over HTTPS — point at waste items and verify
+- [ ] Share link with a few people for early feedback
+
+---
+
+### Phase 2 Step 2 — Municipality rules layer
+**Goal: bin instructions that are specific to the user's city, not generic**
+- [ ] PostgreSQL database with a bin_rules table (city + class → instruction)
+- [ ] Start with City of Vancouver rules hardcoded
+- [ ] API updated to accept optional ?city= parameter
 - [ ] User-contributed corrections — flag wrong predictions per city
-      (this data becomes the competitive moat)
-- [ ] Deploy to web (Render / Railway / Fly.io)
-- [ ] Expose public API so municipalities can embed in their existing city apps
-      (solves the user adoption gap — meet users where they already are)
-- Why API matters: selling to GFL/Recology means integrating into their apps,
-  not convincing people to download a new one
+      (this data becomes the competitive moat over time)
 
 ### Phase 3 — Mobile App
 **Goal: native iOS + Android app**
-- [ ] convert_tflite.py — export model to TFLite with Dynamic Range Quantization
-- [ ] Build React Native app (recommended over Flutter — shares code with web app,
-      larger talent pool, strong TFLite support via JSI in 2026)
-- [ ] Real-time camera feed (not just photo upload)
-- [ ] Offline support — model runs on device, no internet needed
-- [ ] Temporal smoothing: only update classification if same label appears
-      in 3 of last 5 frames — prevents flickering during real-time scanning
+- [ ] Build React Native app (shares logic with web app)
+- [ ] Integrate TFLite model (models/efficientnetb0_9class.tflite already built)
+- [ ] On-device inference — no internet needed, faster than web
+- [ ] Temporal smoothing already designed — port from web frontend
 - [ ] Submit to App Store + Google Play
 
 ### Phase 4 — Production & Sales
 **Goal: a live product with data to show potential buyers**
 - [ ] Analytics — track what items people scan most, where confusion happens
 - [ ] User feedback loop — wrong predictions feed back into retraining
-- [ ] Identify pilot municipality (leverage GFL industry contacts)
+- [ ] Pilot municipality: City of Vancouver (first target)
 - [ ] Approach GFL, Waste Management, Recology with usage data + accuracy numbers
-- [ ] Explore EPR (Extended Producer Responsibility) angle — in 2026 many regions
-      require manufacturers to fund packaging lifecycle. App becomes compliance tool.
+- [ ] Expose public API so municipalities can embed in their existing city apps
+- [ ] Explore EPR (Extended Producer Responsibility) angle — app becomes compliance tool
 
 ---
 
-## Known Limitations (Current 6-Class Model)
-- No electronics class → baby monitors, phones, cables misclassified as paper/plastic
-- No food waste class → organic items misclassified
-- No hazardous class → batteries, paint cans have no correct bin
-- Trained on clean studio images → real-world phone photos in bad lighting may score lower
+## Known Limitations (Current Model)
+- trash class F1 0.82 — catch-all category, hardest to classify by nature
+- plastic precision 0.92 — occasional false positives from other materials
+- Trained on studio images — real-world phone photos in bad lighting may score lower
+- No e-waste class yet — electronics misclassified (known gap, needs more data)
