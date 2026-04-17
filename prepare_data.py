@@ -29,7 +29,7 @@ import shutil
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-TRASHNET_DIR = "Data/raw"
+TRASHNET_DIR = "data/raw"   # lowercase — TrashNet folder on Drive
 GD_DIR       = "Data/original"
 MERGED_DIR   = "Data/merged"
 
