@@ -61,6 +61,20 @@ contamination — a real, expensive problem municipalities already budget for.
 - Saved to: models/efficientnetb0_9class_finetuned.keras
 - Exported to: models/efficientnetb0_9class_savedmodel/ (for TFLite)
 
+### [x] evaluate.py — confusion matrix + classification report (9-class)
+Per-class F1 scores (2,216 test images):
+- battery:    0.99 — excellent despite being a small class
+- biological: 0.99 — excellent
+- textiles:   0.99 — excellent
+- cardboard:  0.97
+- paper:      0.96
+- glass:      0.94
+- metal:      0.94
+- plastic:    0.94 (precision 0.92 — some non-plastic items called plastic)
+- trash:      0.82 — weakest class; expected (catch-all, high visual diversity)
+- Overall accuracy: 96.0% | macro avg F1: 0.95
+- Note: 2 WebP files in dataset skipped (TF decode_image doesn't support WebP)
+
 ---
 
 ## Roadmap

@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
+from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report, confusion_matrix
@@ -63,7 +64,27 @@ _, X_test, _, y_test = train_test_split(
 
 print(f"Test set size: {len(X_test)} images")
 
-# ── 2. Build test dataset ─────────────────────────────────────────────────────
+# ── 2. Filter out unsupported formats (WebP, corrupt files) ──────────────────
+# tf.image.decode_image only handles JPEG, PNG, GIF, BMP — not WebP.
+# Pre-scan with PIL and drop anything TensorFlow can't decode.
+
+valid_mask = []
+for p in X_test:
+    try:
+        with Image.open(p) as img:
+            valid_mask.append(img.format in ("JPEG", "PNG", "GIF", "BMP"))
+    except Exception:
+        valid_mask.append(False)
+
+valid_mask = np.array(valid_mask)
+skipped = (~valid_mask).sum()
+if skipped:
+    print(f"Skipped {skipped} unsupported files (WebP or corrupt)")
+X_test = X_test[valid_mask]
+y_test = y_test[valid_mask]
+print(f"Evaluating on {len(X_test)} images")
+
+# ── 3. Build test dataset ─────────────────────────────────────────────────────
 
 def load_and_preprocess(path, label):
     img = tf.io.read_file(path)
@@ -81,12 +102,12 @@ test_ds = (
     .prefetch(AUTOTUNE)
 )
 
-# ── 3. Load model ─────────────────────────────────────────────────────────────
+# ── 4. Load model ─────────────────────────────────────────────────────────────
 
 print(f"Loading model from {MODEL_PATH}…")
 model = tf.keras.models.load_model(MODEL_PATH)
 
-# ── 4. Get predictions ────────────────────────────────────────────────────────
+# ── 5. Get predictions ────────────────────────────────────────────────────────
 # model.predict returns probabilities for each class (6 numbers per image).
 # np.argmax picks the index of the highest probability = predicted class.
 
@@ -94,7 +115,7 @@ print("Running predictions…")
 y_prob = model.predict(test_ds, verbose=1)   # shape: (380, 6)
 y_pred = np.argmax(y_prob, axis=1)           # shape: (380,)
 
-# ── 5. Classification report ──────────────────────────────────────────────────
+# ── 6. Classification report ──────────────────────────────────────────────────
 # precision = of all times it said "glass", how often was it right?
 # recall    = of all actual glass images, how many did it catch?
 # F1        = harmonic mean of precision and recall (overall class score)
@@ -107,7 +128,7 @@ print(report)
 with open(os.path.join(OUTPUT_DIR, "classification_report.txt"), "w") as f:
     f.write(report)
 
-# ── 6. Confusion matrix ───────────────────────────────────────────────────────
+# ── 7. Confusion matrix ───────────────────────────────────────────────────────
 # Rows = actual class, Columns = predicted class.
 # Diagonal = correct predictions. Off-diagonal = mistakes.
 # e.g. row "plastic", column "glass" = how many plastic images were called glass.
@@ -136,7 +157,7 @@ output_path = os.path.join(OUTPUT_DIR, "confusion_matrix.png")
 plt.savefig(output_path, dpi=150)
 print(f"\nConfusion matrix saved to: {output_path}")
 
-# ── 7. Overall accuracy ───────────────────────────────────────────────────────
+# ── 8. Overall accuracy ───────────────────────────────────────────────────────
 
 overall_acc = (y_pred == y_test).mean()
 print(f"Overall test accuracy: {overall_acc:.4f} ({overall_acc*100:.1f}%)")
