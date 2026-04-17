@@ -13,7 +13,7 @@ from pathlib import Path
 from PIL import Image
 
 try:
-    from tflite_runtime.interpreter import Interpreter
+    from ai_edge_litert.interpreter import Interpreter
 except ImportError:
     from tensorflow.lite.python.interpreter import Interpreter
 
