@@ -86,6 +86,13 @@ Per-class F1 scores (2,216 test images):
 - Tested locally: cardboard photo → 99.97% confidence, correct class
 - Run: uvicorn api.main:app --reload (from project root)
 
+### [x] convert_tflite.py — TFLite export with Dynamic Range Quantization
+- Input: models/efficientnetb0_9class_savedmodel (34.5 MB)
+- Output: models/efficientnetb0_9class.tflite (4.5 MB)
+- Size reduction: 87% — fits comfortably on a mobile device
+- Verified: input (1, 224, 224, 3), output (1, 9), sums to 1.0
+- Ready for React Native integration
+
 ## Roadmap
 
 ### Phase 1 — Dataset Expansion (Foundation)
