@@ -109,7 +109,10 @@ AUTOTUNE = tf.data.AUTOTUNE
 def load_and_preprocess(path, label):
     """Read one image file, resize it. EfficientNet expects pixels in [0, 255]."""
     img = tf.io.read_file(path)
-    img = tf.image.decode_jpeg(img, channels=3)
+    # decode_image handles JPEG, PNG, BMP, GIF — decode_jpeg would crash on others.
+    # expand_animations=False prevents GIFs adding an extra dimension.
+    img = tf.image.decode_image(img, channels=3, expand_animations=False)
+    img.set_shape([None, None, 3])  # decode_image doesn't set shape — resize needs it
     img = tf.image.resize(img, IMG_SIZE)
     img = tf.keras.applications.efficientnet.preprocess_input(img)  # scales to [-1,1]
     return img, label
