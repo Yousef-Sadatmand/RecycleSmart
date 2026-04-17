@@ -77,6 +77,15 @@ Per-class F1 scores (2,216 test images):
 
 ---
 
+### [x] FastAPI backend — /predict endpoint
+- POST /predict — accepts image upload, returns class + confidence + bin instruction + all 9 scores
+- GET /health — liveness check for deployment platforms
+- CORS enabled for local frontend dev
+- Model loads once at startup (~3s), all subsequent requests are fast
+- 70% confidence threshold — low_confidence: true triggers warning in UI
+- Tested locally: cardboard photo → 99.97% confidence, correct class
+- Run: uvicorn api.main:app --reload (from project root)
+
 ## Roadmap
 
 ### Phase 1 — Dataset Expansion (Foundation)
