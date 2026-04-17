@@ -18,18 +18,22 @@ import gradio as gr
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-MODEL_PATH  = "models/efficientnetb0_finetuned.keras"
+MODEL_PATH  = "models/efficientnetb0_9class_finetuned.keras"
 IMG_SIZE    = (224, 224)
-CLASS_NAMES = ["cardboard", "glass", "metal", "paper", "plastic", "trash"]
+CLASS_NAMES = ["battery", "biological", "cardboard", "glass", "metal",
+               "paper", "plastic", "textiles", "trash"]
 
 # Bin instructions shown to the user for each class
 BIN_INSTRUCTIONS = {
-    "cardboard": "♻️  Recycling bin — flatten and remove any tape or staples first.",
-    "glass":     "🟢  Glass recycling bin — rinse it out, remove the lid.",
-    "metal":     "♻️  Recycling bin — rinse cans, remove labels if possible.",
-    "paper":     "♻️  Recycling bin — keep dry. Soiled paper goes in compost.",
-    "plastic":   "♻️  Recycling bin — check the number. #1 and #2 are widely accepted.",
-    "trash":     "🗑️  General waste bin — this item cannot be recycled.",
+    "battery":    "⚠️  Hazardous waste — take to a battery drop-off depot. Never put in any bin.",
+    "biological": "🟤  Compost/organics bin — food scraps and food-soiled paper belong here.",
+    "cardboard":  "♻️  Recycling bin — flatten and remove any tape or staples first.",
+    "glass":      "🟢  Glass recycling bin — rinse it out, remove the lid.",
+    "metal":      "♻️  Recycling bin — rinse cans, remove labels if possible.",
+    "paper":      "♻️  Recycling bin — keep dry. Soiled paper goes in compost.",
+    "plastic":    "♻️  Recycling bin — check the number. #1 and #2 are widely accepted.",
+    "textiles":   "👕  Donation bin or textile recycling depot — do not put in any curbside bin.",
+    "trash":      "🗑️  General waste bin — this item cannot be recycled.",
 }
 
 # ── Load model ────────────────────────────────────────────────────────────────
@@ -77,12 +81,12 @@ demo = gr.Interface(
     inputs=gr.Image(type="numpy", label="Upload a photo of your waste item"),
     outputs=[
         gr.Textbox(label="Result & Bin Instructions", lines=3),
-        gr.Label(num_top_classes=6, label="Confidence by class"),
+        gr.Label(num_top_classes=9, label="Confidence by class"),
     ],
     title="RecycleSmart ♻️",
     description=(
         "Point your camera at a piece of waste and find out which bin it belongs in. "
-        "Powered by EfficientNetB0 trained on 2,527 images across 6 waste categories."
+        "Powered by EfficientNetB0 trained on 14,786 images across 9 waste categories."
     ),
     examples=[],
     theme=gr.themes.Soft(),

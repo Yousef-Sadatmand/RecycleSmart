@@ -22,7 +22,7 @@ contamination — a real, expensive problem municipalities already budget for.
 ### [x] MobileNetV2 transfer learning — webcam demo (capstone)
 - ~93% train accuracy (inflated — data leakage, no val set, broken early stopping)
 
-### [x] train.py — fixed pipeline + EfficientNetB0
+### [x] train.py — fixed pipeline + EfficientNetB0 (6-class)
 - 70/15/15 stratified split, sorted paths for deterministic splits
 - Augmentation on training set only (flips + brightness)
 - class_weight for trash imbalance (weight: 3.069)
@@ -31,8 +31,6 @@ contamination — a real, expensive problem municipalities already budget for.
 - Phase 1: frozen base, custom head only
 - Phase 2: fine-tuning top 30 layers, BN layers kept frozen, lr=1e-4
 - **Final test accuracy: 92.4%** ✓ (target was 90%+)
-- Saved to: models/efficientnetb0_finetuned.keras
-- Exported to: models/efficientnetb0_savedmodel/ (for TFLite)
 
 ### [x] evaluate.py — confusion matrix + classification report
 - Per-class precision, recall, F1
@@ -46,6 +44,22 @@ contamination — a real, expensive problem municipalities already budget for.
 - Tested on real household items — works well on target classes
 - Known limitation: electronics and out-of-distribution items misclassified
   (no e-waste class yet — by design, will be fixed in dataset expansion)
+
+### [x] prepare_data.py — merged dataset (TrashNet + Garbage Dataset)
+- TrashNet (6 classes, 2,527 images) + Garbage Dataset (10 classes, 12,259 images)
+- Output: Data/merged/ — 9 classes, 14,786 images
+- New classes added: battery (756), biological (699), textiles (3,341 — shoes + clothes merged)
+- shoes and clothes merged into one "textiles" class (both are donation/depot items)
+
+### [x] train.py — 9-class EfficientNetB0 (final model)
+- Dataset: 14,786 images across 9 classes
+- Split: 10,350 train / 2,218 val / 2,218 test
+- Class weights: battery 2.174, biological 2.352, trash 2.785 (underrepresented classes boosted)
+- Phase 1 (frozen base): best epoch 6 — val_accuracy 95.72%, stopped at epoch 11
+- Phase 2 (fine-tuning top 30 layers, BN frozen, lr=1e-4): best epoch 7 — val_accuracy 96.12%, stopped at epoch 12
+- **Final test accuracy: 95.76%** ✓ (target was 90%+, exceeds 6-class result of 92.4%)
+- Saved to: models/efficientnetb0_9class_finetuned.keras
+- Exported to: models/efficientnetb0_9class_savedmodel/ (for TFLite)
 
 ---
 

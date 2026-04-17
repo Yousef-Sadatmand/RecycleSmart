@@ -67,7 +67,8 @@ print(f"Test set size: {len(X_test)} images")
 
 def load_and_preprocess(path, label):
     img = tf.io.read_file(path)
-    img = tf.image.decode_jpeg(img, channels=3)
+    img = tf.image.decode_image(img, channels=3, expand_animations=False)
+    img.set_shape([None, None, 3])  # decode_image doesn't set shape — resize needs it
     img = tf.image.resize(img, IMG_SIZE)
     img = tf.keras.applications.efficientnet.preprocess_input(img)
     return img, label
@@ -128,7 +129,7 @@ sns.heatmap(
 )
 ax.set_xlabel("Predicted", fontsize=12)
 ax.set_ylabel("Actual", fontsize=12)
-ax.set_title("Confusion Matrix — RecycleSmart MobileNetV2 (fine-tuned)", fontsize=13)
+ax.set_title("Confusion Matrix — RecycleSmart EfficientNetB0 9-class (fine-tuned)", fontsize=13)
 plt.tight_layout()
 
 output_path = os.path.join(OUTPUT_DIR, "confusion_matrix.png")
