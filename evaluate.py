@@ -19,14 +19,15 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-DATA_DIR   = "data/raw"
-MODEL_PATH = "models/efficientnetb0_finetuned.keras"
+DATA_DIR   = "Data/merged"
+MODEL_PATH = "models/efficientnetb0_9class_finetuned.keras"
 OUTPUT_DIR = "evaluation"
 IMG_SIZE   = (224, 224)
 BATCH_SIZE = 32
 SEED       = 42
 
-CLASS_NAMES = ["cardboard", "glass", "metal", "paper", "plastic", "trash"]
+CLASS_NAMES = ["battery", "biological", "cardboard", "glass", "metal",
+               "paper", "plastic", "textiles", "trash"]
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
