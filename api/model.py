@@ -1,18 +1,25 @@
 """
 model.py — Model loading and inference for RecycleSmart API
 
-Loads the EfficientNetB0 model once at startup and exposes a single
-predict() function that the API calls for every request.
+Uses TFLite runtime instead of full TensorFlow so the server fits
+within Render free tier's 512MB RAM limit.
+
+Loads the model once at startup; all subsequent requests are fast.
 """
 
+import io
 import numpy as np
-import tensorflow as tf
 from pathlib import Path
+from PIL import Image
+
+try:
+    from tflite_runtime.interpreter import Interpreter
+except ImportError:
+    from tensorflow.lite.python.interpreter import Interpreter
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-# Path is relative to the project root, where uvicorn is launched from
-MODEL_PATH = Path("models/efficientnetb0_9class_finetuned.keras")
+MODEL_PATH = Path("models/efficientnetb0_9class.tflite")
 IMG_SIZE   = (224, 224)
 
 CLASS_NAMES = ["battery", "biological", "cardboard", "glass", "metal",
@@ -30,45 +37,35 @@ BIN_INSTRUCTIONS = {
     "trash":      "🗑️ General waste bin — this item cannot be recycled.",
 }
 
-CONFIDENCE_THRESHOLD = 0.70   # below this → warn the user to check local guidelines
+CONFIDENCE_THRESHOLD = 0.70
 
 # ── Load model once at startup ────────────────────────────────────────────────
-# Loading a TensorFlow model takes ~3 seconds. We do it once here so every
-# request after that is fast. The API imports this module on startup.
 
-print(f"Loading model from {MODEL_PATH}…")
-model = tf.keras.models.load_model(MODEL_PATH)
+print(f"Loading TFLite model from {MODEL_PATH}…")
+interpreter = Interpreter(model_path=str(MODEL_PATH))
+interpreter.allocate_tensors()
+
+input_details  = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 print("Model ready.")
 
 # ── Inference ─────────────────────────────────────────────────────────────────
 
 def predict(image_bytes: bytes) -> dict:
     """
-    Takes raw image bytes (JPEG or PNG from the HTTP request),
-    runs the model, and returns a result dict.
-
-    Returns:
-        {
-            "class":           "plastic",
-            "confidence":      0.94,
-            "bin_instruction": "♻️ Recycling bin...",
-            "low_confidence":  False,
-            "all_scores":      {"battery": 0.01, ..., "plastic": 0.94, ...}
-        }
+    Takes raw image bytes, runs TFLite inference, returns classification result.
     """
-    # Decode bytes → tensor
-    img = tf.image.decode_image(
-        tf.constant(image_bytes), channels=3, expand_animations=False
-    )
-    img.set_shape([None, None, 3])
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    img = img.resize(IMG_SIZE)
 
-    # Resize + preprocess — must match train.py exactly
-    img = tf.image.resize(img, IMG_SIZE)
-    img = tf.keras.applications.efficientnet.preprocess_input(img)
-    img = tf.expand_dims(img, axis=0)   # add batch dimension: (1, 224, 224, 3)
+    # EfficientNet preprocessing: scale [0, 255] → [-1, 1]
+    img_array = np.array(img, dtype=np.float32)
+    img_array = (img_array / 127.5) - 1.0
+    img_array = np.expand_dims(img_array, axis=0)  # (1, 224, 224, 3)
 
-    # Run inference
-    scores = model.predict(img, verbose=0)[0]   # shape: (9,)
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    scores = interpreter.get_tensor(output_details[0]['index'])[0]
 
     top_idx    = int(np.argmax(scores))
     top_class  = CLASS_NAMES[top_idx]
