@@ -78,6 +78,12 @@ Per-class F1 scores (2,216 test images):
 - Verified: input (1, 224, 224, 3), output (1, 9), sums to 1.0
 - Ready for React Native integration
 
+### [x] Switched API to TFLite runtime for deployment
+- Replaced tensorflow==2.21.0 (500MB) with ai-edge-litert (17MB) — fits Render free tier
+- api/model.py rewritten: TFLite Interpreter + PIL/numpy preprocessing (no TF dependency)
+- Added .python-version (3.11.9) so Render uses a supported Python version
+- TFLite model (4.5MB) committed to GitHub via .gitignore exception
+
 ### [x] React frontend — real-time camera classification
 - Live camera feed, no photo upload — camera opens immediately on app load
 - Green scanning reticle overlay
@@ -94,15 +100,15 @@ Per-class F1 scores (2,216 test images):
 
 ## Roadmap
 
-### ← NEXT SESSION → Phase 2 Step 1 — Deploy to web
+### ← NEXT → Phase 2 Step 1 — Deploy to web (IN PROGRESS)
 **Goal: live product accessible from any phone browser**
 
 **Step 1 — Deploy FastAPI backend to Render (free tier)**
-- [ ] Create account at render.com
-- [ ] New Web Service → connect GitHub repo
-- [ ] Build command: pip install -r requirements.txt
-- [ ] Start command: uvicorn api.main:app --host 0.0.0.0 --port $PORT
-- [ ] Copy the live URL Render gives you (e.g. https://recyclesmart-api.onrender.com)
+- [x] Create account at render.com
+- [x] New Web Service → connect GitHub repo
+- [x] Build command: pip install -r requirements.txt
+- [x] Start command: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+- [ ] Confirm server is live — copy the Render URL (e.g. https://recyclesmart-api.onrender.com)
 
 **Step 2 — Point frontend at the live API**
 - [ ] Update frontend/.env: VITE_API_URL=https://your-render-url.onrender.com
