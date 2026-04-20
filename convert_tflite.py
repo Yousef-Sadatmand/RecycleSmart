@@ -31,11 +31,11 @@ TFLITE_OUT       = "models/efficientnetb0_9class.tflite"
 print(f"Loading SavedModel from {SAVED_MODEL_PATH}…")
 converter = tf.lite.TFLiteConverter.from_saved_model(SAVED_MODEL_PATH)
 
-# Dynamic Range Quantization — compress weights to int8
-# No calibration data needed, minimal accuracy loss (<1%)
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
+# No quantization — preserve full float32 precision.
+# Dynamic Range Quantization broke EfficientNetB0 accuracy in practice.
+# File is larger (~34MB) but classification is correct.
 
-print("Converting to TFLite with Dynamic Range Quantization…")
+print("Converting to TFLite (float32, no quantization)…")
 tflite_model = converter.convert()
 
 # ── Save ──────────────────────────────────────────────────────────────────────

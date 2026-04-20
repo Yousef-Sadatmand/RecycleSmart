@@ -58,9 +58,9 @@ def predict(image_bytes: bytes) -> dict:
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     img = img.resize(IMG_SIZE, Image.Resampling.LANCZOS)
 
-    # EfficientNet preprocessing: scale [0, 255] → [-1, 1]
-    img_array = np.array(img, dtype=np.float32)
-    img_array = (img_array / 127.5) - 1.0
+    # EfficientNet (Keras 3) includes normalization internally — pass raw pixels.
+    # preprocess_input() is a no-op in this version; do NOT scale here.
+    img_array = np.array(img, dtype=np.float32)  # [0, 255]
     img_array = np.expand_dims(img_array, axis=0)  # (1, 224, 224, 3)
 
     interpreter.set_tensor(input_details[0]['index'], img_array)
