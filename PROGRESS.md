@@ -100,34 +100,23 @@ Per-class F1 scores (2,216 test images):
 
 ## Roadmap
 
-### ← NEXT → Phase 2 Step 1 — Deploy to web (IN PROGRESS)
-**Goal: live product accessible from any phone browser**
+### [x] Phase 2 Step 1 — Deploy to web COMPLETE
+**Live URLs:**
+- Backend API: https://recyclesmart-api.onrender.com
+- Frontend: https://recycle-smart.vercel.app
 
-**Step 1 — Deploy FastAPI backend to Render (free tier)**
-- [x] Create account at render.com
-- [x] New Web Service → connect GitHub repo
-- [x] Build command: pip install -r requirements.txt
-- [x] Start command: uvicorn api.main:app --host 0.0.0.0 --port $PORT
-- [ ] Confirm server is live — copy the Render URL (e.g. https://recyclesmart-api.onrender.com)
-
-**Step 2 — Point frontend at the live API**
-- [ ] Update frontend/.env: VITE_API_URL=https://your-render-url.onrender.com
-- [ ] Rebuild frontend: npm run build
-
-**Step 3 — Deploy React frontend to Vercel (free)**
-- [ ] Create account at vercel.com
-- [ ] Import GitHub repo → set root directory to frontend/
-- [ ] Add env variable: VITE_API_URL=https://your-render-url.onrender.com
-- [ ] Deploy — Vercel gives a public HTTPS URL
-
-**Step 4 — Test on phone**
-- [ ] Open Vercel URL on phone browser
-- [ ] Camera works over HTTPS — point at waste items and verify
-- [ ] Share link with a few people for early feedback
+**What was built:**
+- FastAPI backend deployed to Render free tier (Python 3.11, ai-edge-litert)
+- React frontend deployed to Vercel, auto-deploys on every git push to main
+- Switched from full TensorFlow to TFLite for deployment (500MB → 16MB)
+- Fixed critical preprocessing bug: EfficientNet in Keras 3 normalizes internally — raw [0,255] pixels passed directly
+- Fixed TFLite quantization issue: reconverted without Dynamic Range Quantization
+- Used absolute model path via __file__ for cross-platform compatibility
+- Tested and working on phone browser ✓
 
 ---
 
-### Phase 2 Step 2 — Municipality rules layer
+### ← NEXT SESSION → Phase 2 Step 2 — Municipality rules layer
 **Goal: bin instructions that are specific to the user's city, not generic**
 - [ ] PostgreSQL database with a bin_rules table (city + class → instruction)
 - [ ] Start with City of Vancouver rules hardcoded
