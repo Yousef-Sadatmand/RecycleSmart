@@ -3,8 +3,8 @@ Data/
 data/
 
 # Trained models — too large for git
-# Exception: TFLite model (4.5MB) is needed for deployment
-models/
+# Exception: TFLite model needed for deployment
+models/*
 !models/efficientnetb0_9class.tflite
 
 # Python environment
