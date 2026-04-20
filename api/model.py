@@ -56,7 +56,7 @@ def predict(image_bytes: bytes) -> dict:
     Takes raw image bytes, runs TFLite inference, returns classification result.
     """
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img = img.resize(IMG_SIZE)
+    img = img.resize(IMG_SIZE, Image.Resampling.LANCZOS)
 
     # EfficientNet preprocessing: scale [0, 255] → [-1, 1]
     img_array = np.array(img, dtype=np.float32)
