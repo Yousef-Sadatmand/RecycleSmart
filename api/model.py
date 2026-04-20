@@ -19,7 +19,7 @@ except ImportError:
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-MODEL_PATH = Path("models/efficientnetb0_9class.tflite")
+MODEL_PATH = Path(__file__).parent / "efficientnetb0_9class.tflite"
 IMG_SIZE   = (224, 224)
 
 CLASS_NAMES = ["battery", "biological", "cardboard", "glass", "metal",
